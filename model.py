@@ -155,10 +155,10 @@ def train():
                 print('Iteration %d: Generator loss = %g | Discriminator loss = %g' % (i, loss_g, loss_d))
             # Save
             if i % ITERS_PER_SAVE == 0:
-                saver.save(sess, './gan_saved_model')
+                saver.save(sess, './cache/gan_saved_model')
 
         # Save at the end of the epoch, too
-        saver.save(sess, './gan_saved_model')
+        saver.save(sess, './cache/gan_saved_model')
 
         out = sess.run(model.evaluate, feed_dict = {g_input_z: gen_noise()})
         print('**** EVALUATION: %g ****' % out)
@@ -167,10 +167,9 @@ def train():
 # Test the model by generating some samples from random latent codes
 def test():
     output = sess.run(model.output, feed_dict = {g_input_z: gen_noise()})
-    output = output.eval() # turn to numpy
     output = [ corpus.translate(l.tolist()) for l in output ]
 
-    with(OUTFILE, 'w') as f:
+    with open(OUTFILE, 'w') as f:
         f.write("\n".join(output))
 
 ## --------------------------------------------------------------------------------------

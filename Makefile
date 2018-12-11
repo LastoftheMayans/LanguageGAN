@@ -13,5 +13,5 @@ tokenize:
 
 clean:
 	rm -f ./data/tokenize.pyc
-	rm -f ./gan_saved_model/*
+	rm -f ./cache/*
 	rm -rf ./__pycache__
