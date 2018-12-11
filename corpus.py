@@ -85,10 +85,9 @@ class Corpus(object):
     def next_batch(self):
         if(self.index + self.batch_size >= self.size):
             out1 = self.corpus[self.index:]
-            self.index = self.index + self.batch_size - self.size
+            self.index = self.index + self.batch_size - self.size + 1
             out2 = self.corpus[:self.index-1]
             out = out1 + out2
-            print("Warning: exceeding corpus bounds, data will loop\n")
         else:
             out = self.corpus[self.index:self.index+self.batch_size]
             self.index += self.batch_size

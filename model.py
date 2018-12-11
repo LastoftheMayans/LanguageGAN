@@ -152,7 +152,7 @@ def train():
 
             # Print losses
             if i % ITERS_PER_PRINT == 0:
-                print('Iteration %d: Generator loss = %g | Discriminator loss = %g' % (iteration, loss_g, loss_d))
+                print('Iteration %d: Generator loss = %g | Discriminator loss = %g' % (i, loss_g, loss_d))
             # Save
             if i % ITERS_PER_SAVE == 0:
                 saver.save(sess, './gan_saved_model')
