@@ -2,7 +2,7 @@ import os, os.path, random
 import numpy as np
 
 class Corpus(object):
-    def __init__(self, author, book=None, batch_size=1, sentence_length=12, stop="*STOP*"):
+    def __init__(self, author, book=None, batch_size=1, sentence_length=12, stop="*stop*"):
         self.author = author
         self.batch_size = batch_size
         self.sentence_length = sentence_length
@@ -12,7 +12,7 @@ class Corpus(object):
 
         self.words = []
         self.vocabulary = {}
-        self.corpus = self.load_corpus(sentence_length)
+        self.corpus = self.load_corpus()
         self.vocab_size = len(self.words)
 
         self.index = 0
@@ -56,7 +56,7 @@ class Corpus(object):
 
         return books
 
-    def load_corpus(self, sentence_length):
+    def load_corpus(self):
         if len(self.vocabulary) > 0:
             print("Error: loading additional information into the corpus is not currently supported.")
             return None
@@ -72,6 +72,7 @@ class Corpus(object):
         self.words.remove(self.stop)
         self.words = [ self.stop ] + list(self.words)
         self.vocabulary = { self.words[index]: index for index in range(len(self.words))}
+        corpus = [ [ self.vocabulary[word] for word in sentence ] for sentence in corpus ]
 
         # shuffle the sentences together
         random.shuffle(corpus)
@@ -91,19 +92,21 @@ class Corpus(object):
         else:
             out = self.corpus[self.index:self.index+self.batch_size]
             self.index += self.batch_size
-        print(np.shape(np.array(out)))
-        return np.array(out)
+        return np.array(out).astype(int)
 
 
     def translate(self, sentence):
         # turn ints to words
-        tokens = [ self.words[word] for word in sentence ]
+        tokens = [ self.words[word] if word > 0 else '' for word in sentence ]
 
         # combine the list into a single sentence
         sentence = " ".join(tokens)
 
         # replace double apostrophes with quotes
         sentence = sentence.replace('\'\'', '"')
+
+        # replace extended whitespace with smaller whitespace
+        sentence = sentence.replace('  ', ' ')
 
         # remove whitespace in front of most punctuation (not quotes b/c of ambiguity)
         sentence = sentence.replace(' ,',',').replace(' .','.').replace(' !','!')
