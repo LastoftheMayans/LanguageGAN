@@ -60,7 +60,7 @@ class Model:
         self.evaluate = self.eval_function()
 
     def generator(self):
-        sz = BATCH_SIZE * SENTENCE_SIZE * self.vocab_size
+        sz = BATCH_SIZE * SENTENCE_SIZE * EMBEDDING_SIZE
         with tf.variable_scope("generator"):
             g1 = layers.dense(self.g_input_z, sz)
             g2 = tf.reshape(g1, [-1, SENTENCE_SIZE, EMBEDDING_SIZE])
@@ -119,16 +119,16 @@ class Model:
 
 ## --------------------------------------------------------------------------------------
 
-# Start session
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
-
 # Build model
 g_input_z = tf.placeholder(tf.float32, (None, NOISE_DIMENSION))
 txt_input = tf.placeholder(tf.int32, (None, SENTENCE_SIZE))
 corpus = Corpus("hemingway", batch_size=BATCH_SIZE, sentence_length=SENTENCE_SIZE)
 model = Model(txt_input, g_input_z, corpus.vocab_size)
 num_batches = len(corpus) // BATCH_SIZE
+
+# Start session
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
 
 # For saving/loading models
 saver = tf.train.Saver()
@@ -174,10 +174,10 @@ def train():
 def test():
     output = sess.run(model.output, feed_dict = {g_input_z: gen_noise()})
     output = output.eval() # turn to numpy
-    output = [ corpus.translate(l.tolist()) for l in output]
+    output = [ corpus.translate(l.tolist()) for l in output ]
 
     with(OUTFILE, 'w') as f:
-        w.write("\n".join(output))
+        f.write("\n".join(output))
 
 ## --------------------------------------------------------------------------------------
 
