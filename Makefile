@@ -15,3 +15,4 @@ clean:
 	rm -f ./data/tokenize.pyc
 	rm -f ./cache/*
 	rm -rf ./__pycache__
+	rm -f ./output.txt
