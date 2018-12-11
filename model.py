@@ -111,7 +111,7 @@ class Model:
         normalized_batch = tf.nn.l2_normalize(batch, axis=1)
         cosine = tf.matmul(normalized_batch, tf.transpose(normalized_embedding, [1, 0]))
         words = tf.argmax(cosine, 1)
-        return tf.reshape(words, [-1, SENTENCE_SIZE, EMBEDDING_SIZE])
+        return tf.reshape(words, [-1, SENTENCE_SIZE])
 
     # For evaluating the quality of generated text
     def eval_function(self):
