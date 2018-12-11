@@ -1,6 +1,6 @@
 import os, nltk, os.path, sys
 
-STOP = ["*STOP*"]
+STOP = ["*stop*"]
 
 def make_dir(path):
     if not os.path.exists(path):
@@ -24,7 +24,7 @@ def tokenize_file_helper(infile, outfile):
         data = f.read()
 
     # Try to decode into utf-8
-    data = data.decode('utf-8', 'ignore')
+    # data = data.decode('utf-8', 'ignore')
 
     # Strip all newlines
     data.replace('\n', '')
@@ -33,7 +33,7 @@ def tokenize_file_helper(infile, outfile):
     output = nltk.sent_tokenize(data)
 
     # Tokenize lines
-    output = [ STOP + nltk.word_tokenize(sentence) + STOP for sentence in output]
+    output = [ nltk.word_tokenize(sentence) + STOP for sentence in output]
 
     # Recombine tokenized output
     output = "\n".join([" ".join(sentence) for sentence in output])

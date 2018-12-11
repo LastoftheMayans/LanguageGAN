@@ -28,6 +28,7 @@ BETA1 = 0.5
 ITERS_PER_PRINT = 100
 ITERS_PER_SAVE = 100
 OUTFILE = "output.txt"
+AUTHOR = "hemingway"
 
 # Numerically stable logarithm function
 def log(x):
@@ -116,7 +117,7 @@ class Model:
 # Build model
 g_input_z = tf.placeholder(tf.float32, (None, NOISE_DIMENSION))
 txt_input = tf.placeholder(tf.int32, (None, SENTENCE_SIZE))
-corpus = Corpus("hemingway", batch_size=BATCH_SIZE, sentence_length=SENTENCE_SIZE)
+corpus = Corpus(AUTHOR, batch_size=BATCH_SIZE, sentence_length=SENTENCE_SIZE)
 model = Model(txt_input, g_input_z, corpus.vocab_size)
 num_batches = len(corpus) // BATCH_SIZE
 
