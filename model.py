@@ -69,19 +69,13 @@ class Model:
     def discriminator(self, embedding):
         hidden_size = 256
 
-        d1 = layers.dense(embedding, hidden_size)
-        d2 = layers.batch_normalization(d1)
-        d3 = tf.nn.leaky_relu(d2)
+        d1 = tf.reshape(embedding, [-1, SENTENCE_SIZE * EMBEDDING_SIZE]) 
+        d2 = layers.dense(d1, hidden_size)
+        d3 = layers.batch_normalization(d2)
+        d4 = tf.nn.leaky_relu(d3)
 
-        d4 = layers.dense(d3, 1)
-        d5 = layers.batch_normalization(d4)
-        d6 = tf.nn.leaky_relu(d5)
-        d7 = tf.reshape(d6, [-1, SENTENCE_SIZE])
-
-        d8 = layers.dense(d7, 1, activation=tf.nn.sigmoid)
-        d9 = tf.reshape(d8, [-1])
-
-        return d9
+        d5 = layers.dense(d4, 1, activation=tf.nn.sigmoid)
+        return tf.reshape(d5, [-1])
 
     # Training loss for Generator
     def g_loss_function(self):
