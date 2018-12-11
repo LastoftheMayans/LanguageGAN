@@ -65,7 +65,7 @@ class Corpus(object):
         # pull sentences from files
         for title in self.books:
             with open(title, 'r') as f:
-                corpus = corpus + [ self.clip_sentence(sentence.split(' ')) for sentence in f.read().split('\n') ]
+                corpus = corpus + [ self.clip_sentence(sentence.lower().split(' ')) for sentence in f.read().split('\n') ]
 
         # create a list of unique words (such that self.stop is the first element -> 0)
         self.words = set([ word for sentence in corpus for word in sentence ])
