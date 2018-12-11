@@ -43,8 +43,8 @@ class Model:
         self.g_output = self.generator()
         self.g_params = tf.trainable_variables()
         
-        self.embedding = tf.Variable(tf.truncated_normal((self.vocab_size, EMBEDDING_SIZE), stddev=0.1, dtype=tf.float32))
         with tf.variable_scope("discriminator"):
+            self.embedding = tf.Variable(tf.truncated_normal((self.vocab_size, EMBEDDING_SIZE), stddev=0.1, dtype=tf.float32))
             txt = tf.nn.embedding_lookup(self.embedding, self.text_batch)
             self.d_real = self.discriminator(txt)
         with tf.variable_scope("discriminator", reuse=True):
@@ -60,7 +60,7 @@ class Model:
         self.evaluate = self.eval_function()
 
     def generator(self):
-        sz = BATCH_SIZE * SENTENCE_SIZE * EMBEDDING_SIZE
+        sz = SENTENCE_SIZE * EMBEDDING_SIZE
         with tf.variable_scope("generator"):
             g1 = layers.dense(self.g_input_z, sz)
             g2 = tf.reshape(g1, [-1, SENTENCE_SIZE, EMBEDDING_SIZE])
