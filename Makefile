@@ -8,9 +8,6 @@ load:
 test:
 	python3 ./model.py 1 0
 
-tokenize:
-	python ./data/tokenize.py
-
 clean:
 	rm -f ./data/tokenize.pyc
 	rm -f ./cache/*
