@@ -2,7 +2,8 @@ import tensorflow as tf
 layers = tf.layers
 import numpy as np
 from scipy.misc import imsave
-import os, corpus, sys
+import os, sys
+from corpus import Corpus
 import tensorflow.contrib.gan as gan
 
 # USAGE:
@@ -20,6 +21,12 @@ NUM_GEN_UPDATES = 2
 ITERS_PER_PRINT = 100
 ITERS_PER_SAVE = 100
 OUTFILE = "output.txt"
+LEARNING_RATE = 0.001
+BETA1 = 0.5
+
+# Numerically stable logarithm function
+def log(x):
+    return tf.log(tf.maximum(x, 1e-5))
 
 class Model:
 
@@ -46,53 +53,51 @@ class Model:
         self.evaluate = self.eval_function()
 
     def generator(self):
-        sz = SENTENCE_SIZE * BATCH_SIZE * self.embedding_size
+        sz = BATCH_SIZE * SENTENCE_SIZE * self.vocab_size
         with tf.variable_scope("generator"):
-            g1 = layers.dense(self.g_input_z. sz)
-            g2 = layers.batch_normalization(g1)
-            g3 = tf.nn.leaky_relu(g2)
-
-            g4 = layers.dense(g3, SENTENCE_SIZE * BATCH_SIZE)
-            g5 = layers.batch_normalization(g4)
-            g6 = tf.nn.sigmoid(g5) * self.vocab_size
-
-            g7 = tf.cast(g6, tf.int32)
-
-            return tf.reshape(g7, [BATCH_SIZE, SENTENCE_SIZE])
+            g1 = layers.dense(self.g_input_z, sz)
+            g2 = tf.reshape(g1, [-1, SENTENCE_SIZE, self.vocab_size])
+            print(g2)
+            return tf.argmax(g2, axis=2)
 
     def discriminator(self, txt):
         hidden_size = 256
 
-        E = tf.Variable(tf.truncated_normal((self.vocab_size, self.embedding_size),stddev=0.1))
+        E = tf.Variable(tf.truncated_normal((self.vocab_size, self.embedding_size), stddev=0.1, dtype=tf.float32))
         txt = tf.nn.embedding_lookup(E, txt)
 
-        d1 = layers.dense(txt, hidden_size * BATCH_SIZE)
+        d1 = layers.dense(txt, hidden_size)
         d2 = layers.batch_normalization(d1)
         d3 = tf.nn.leaky_relu(d2)
 
-        d4 = layers.dense(d3, BATCH_SIZE)
-        d5 = tf.nn.sigmoid(d4)
+        d4 = layers.dense(d3, 1)
+        d5 = layers.batch_normalization(d4)
+        d6 = tf.nn.leaky_relu(d5)
+        d7 = tf.reshape(d6, [-1, SENTENCE_SIZE])
 
-        return d5
+        d8 = layers.dense(d7, 1, activation=tf.nn.sigmoid)
+        d9 = tf.reshape(d8, [-1])
+
+        return d9
 
     # Training loss for Generator
     def g_loss_function(self):
-        g_loss = tf.reduce_mean(-log(self.d_fake)) ### YOUR CODE GOES HERE
+        g_loss = tf.reduce_mean(-log(self.d_fake))
         return g_loss
 
     # Training loss for Discriminator
     def d_loss_function(self):
-        d_loss = .5 * tf.reduce_mean((-log(self.d_real) - log(1 - self.d_fake))) ### YOUR CODE GOES HERE
+        d_loss = .5 * tf.reduce_mean((-log(self.d_real) - log(1 - self.d_fake)))
         return d_loss
 
     # Optimizer/Trainer for Generator
     def g_trainer(self):
-        g_train = tf.train.AdamOptimizer(learning_rate=args.learn_rate, beta1 = args.beta1).minimize(self.g_loss, var_list = self.g_params) ### YOUR CODE GOES HERE
+        g_train = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE, beta1 = BETA1).minimize(self.g_loss, var_list = self.g_params)
         return g_train
 
     # Optimizer/Trainer for Discriminator
     def d_trainer(self):
-        d_train = tf.train.AdamOptimizer(learning_rate=args.learn_rate, beta1 = args.beta1).minimize(self.d_loss, var_list = self.d_params) ### YOUR CODE GOES HERE
+        d_train = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE, beta1 = BETA1).minimize(self.d_loss, var_list = self.d_params)
         return d_train
 
     # For evaluating the quality of generated text
@@ -104,8 +109,8 @@ class Model:
 
 if __name__ == '__main__':
     g_input_z = tf.placeholder(tf.float32, (None, NOISE_DIMENSION))
-    txt_input = tf.placeholder(tf.int32, (None, SENTENCE_SIZE, EMBEDDING_SIZE))
-    corpus = Corpus("hemingway", batch_size=BATCH_SIZE, sentence_size=SENTENCE_SIZE)
+    txt_input = tf.placeholder(tf.int32, (None, SENTENCE_SIZE))
+    corpus = Corpus("hemingway", batch_size=BATCH_SIZE, sentence_length=SENTENCE_SIZE)
     model = Model(txt_input, g_input_z, corpus.vocab_size, embedding_size=EMBEDDING_SIZE)
     num_batches = len(corpus) // BATCH_SIZE
 

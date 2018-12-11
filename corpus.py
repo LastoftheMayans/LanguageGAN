@@ -3,7 +3,6 @@ import numpy as np
 
 class Corpus(object):
     def __init__(self, author, book=None, batch_size=1, sentence_length=12, stop="*STOP*"):
-        self.vocab_size = 0
         self.author = author
         self.batch_size = batch_size
         self.sentence_length = sentence_length
@@ -14,6 +13,7 @@ class Corpus(object):
         self.words = []
         self.vocabulary = {}
         self.corpus = self.load_corpus(sentence_length)
+        self.vocab_size = len(self.words)
 
         self.index = 0
         self.size = len(self.corpus)
@@ -58,7 +58,7 @@ class Corpus(object):
 
     def load_corpus(self, sentence_length):
         if len(self.vocabulary) > 0:
-            print "Error: loading additional information into the corpus is not currently supported."
+            print("Error: loading additional information into the corpus is not currently supported.")
             return None
 
         corpus = []
@@ -91,6 +91,7 @@ class Corpus(object):
         else:
             out = self.corpus[self.index:self.index+self.batch_size]
             self.index += self.batch_size
+        print(np.shape(np.array(out)))
         return np.array(out)
 
 
@@ -109,7 +110,3 @@ class Corpus(object):
         sentence = sentence.replace(' ?','?').replace(' :',':').replace(' \'', '\'')
 
         return sentence
-
-
-if __name__ == '__main__':
-    c = Corpus("hemingway")
