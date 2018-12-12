@@ -197,11 +197,14 @@ if __name__ == '__main__':
     do_train = int(sys.argv[1]) == 0
     load = int(sys.argv[2]) == 0
 
-    if load or not do_train:
+    if load:
         load_last_checkpoint()
 
     if do_train:
         train()
+    elif load:
+        test()
     else:
+        train()
         test()
 
