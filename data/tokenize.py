@@ -1,4 +1,4 @@
-import os, nltk, os.path, sys
+import os, nltk, os.path, sys, io
 
 STOP = ["*stop*"]
 
@@ -20,7 +20,7 @@ def tokenize_file(infile, outfile):
 
 def tokenize_file_helper(infile, outfile):
     # Read all input data
-    with open(infile, 'r') as f:
+    with io.open(infile, 'r', encoding='utf8', errors='ignore') as f:
         data = f.read()
 
     # Try to decode into utf-8
@@ -36,10 +36,10 @@ def tokenize_file_helper(infile, outfile):
     output = [ nltk.word_tokenize(sentence) + STOP for sentence in output]
 
     # Recombine tokenized output
-    output = "\n".join([" ".join(sentence) for sentence in output])
+    output = unicode("\n".join([" ".join(sentence) for sentence in output]))
 
     # Write to output file
-    with open(outfile, 'w') as f:
+    with io.open(outfile, 'w', encoding='utf8') as f:
         f.write(output)
 
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     for d in os.listdir("original"):
         path = os.path.join(original, d)
         target = os.path.join(tokenized, d)
-        # remove licenses directory and source.txt
+        # ignore licenses directory and source.txt
         if os.path.isdir(path) and d != "licenses":
             # ensure target directory exists
             make_dir(target)
