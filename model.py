@@ -61,22 +61,36 @@ class Model:
         self.evaluate = self.eval_function()
 
     def generator(self):
-        sz = SENTENCE_SIZE * EMBEDDING_SIZE
+        hidden_size = 2048
+        out_size = SENTENCE_SIZE * EMBEDDING_SIZE
         with tf.variable_scope("generator"):
-            g1 = layers.dense(self.g_input_z, sz)
-            g2 = tf.reshape(g1, [-1, SENTENCE_SIZE, EMBEDDING_SIZE])
-            return g2
+            g1 = layers.dense(self.g_input_z, hidden_size)
+            g2 = layers.batch_normalization(g1)
+            g3 = tf.nn.leaky_relu(g2)
+
+            g4 = layers.dense(g3, hidden_size)
+            g5 = layers.batch_normalization(g4)
+            g6 = tf.nn.leaky_relu(g5)
+
+            g7 = layers.dense(g6, out_size)
+            g8 = tf.reshape(g7, [-1, SENTENCE_SIZE, EMBEDDING_SIZE])
+            return g8
 
     def discriminator(self, embedding):
         hidden_size = 256
 
         d1 = tf.reshape(embedding, [-1, SENTENCE_SIZE * EMBEDDING_SIZE]) 
+
         d2 = layers.dense(d1, hidden_size)
         d3 = layers.batch_normalization(d2)
         d4 = tf.nn.leaky_relu(d3)
 
-        d5 = layers.dense(d4, 1, activation=tf.nn.sigmoid)
-        return tf.reshape(d5, [-1])
+        d5 = layers.dense(d4, hidden_size)
+        d6 = layers.batch_normalization(d5)
+        d7 = tf.nn.leaky_relu(d6)
+
+        d8 = layers.dense(d7, 1, activation=tf.nn.sigmoid)
+        return tf.reshape(d8, [-1])
 
     # Training loss for Generator
     def g_loss_function(self):
