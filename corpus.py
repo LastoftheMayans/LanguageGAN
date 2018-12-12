@@ -101,11 +101,9 @@ class Corpus(object):
         # combine the list into a single sentence
         sentence = " ".join(tokens)
 
-        # replace double apostrophes with quotes
-        sentence = sentence.replace('\'\'', '"')
-
-        # replace extended whitespace with smaller whitespace
-        sentence = sentence.replace('  ', ' ')
+        # construct quotes
+        sentence = sentence.replace(' \'\'', '"')
+        sentence = sentence.replace('`` ', '"')
 
         # remove whitespace in front of most punctuation (not quotes b/c of ambiguity)
         sentence = sentence.replace(' ,',',').replace(' .','.').replace(' !','!')
