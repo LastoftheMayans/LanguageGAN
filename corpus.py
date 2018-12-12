@@ -18,10 +18,15 @@ class Corpus(object):
         self.index = 0
         self.size = len(self.corpus)
 
+    # len is number of lines in the corpus
+    # for size of vocabulary, use Corpus.vocab_size
     def __len__(self):
         return self.size
 
     def load_titles(self, book):
+        if len(self.books) > 0:
+            raise AssertionError("Cannot call Corpous.load_titles outside of __init__")
+
         books = []
 
         # validate author
@@ -57,9 +62,9 @@ class Corpus(object):
         return books
 
     def load_corpus(self):
+        # at a later point, may allow adding additional books to the corpus
         if len(self.vocabulary) > 0:
-            print("Error: loading additional information into the corpus is not currently supported.")
-            return None
+            raise AssertionError("Cannot call Corpous.load_corpus outside of __init__")
 
         corpus = []
         # pull sentences from files
@@ -71,14 +76,22 @@ class Corpus(object):
         self.words = set([ word for sentence in corpus for word in sentence ])
         self.words.remove(self.stop)
         self.words = [ self.stop ] + list(self.words)
+
+        # map each word to an int
         self.vocabulary = { self.words[index]: index for index in range(len(self.words))}
+
+        # translate each word in the corpus to the corresponding int
         corpus = [ [ self.vocabulary[word] for word in sentence ] for sentence in corpus ]
+
+        # remove all one-word sentence
+        corpus = [ sentence if sentence[1] > 0 for sentence in corpus ]
 
         # shuffle the sentences together
         random.shuffle(corpus)
 
         return corpus
 
+    # remove any leading and trailing underscores (italics)
     def preprocess_word(self, word):
         if len(word) < 2:
             return word
@@ -88,21 +101,38 @@ class Corpus(object):
             word = word[:-1]
         return word
 
+    # set sentence to fixed length (sentence), and remove any leading or trailing numbers (most likely line numbers)
     def clip_sentence(self, sentence):
-        return [ self.preprocess_word(sentence[i]) if i < len(sentence) else self.stop for i in range(self.sentence_length-1) ] + [ self.stop ]
+        sentence = sentence[1:] if sentence[0].strip().isdigit() else sentence
+        sentence = sentence[:-1] if sentence[-1].strip()isdigit() else sentence
+        sentence = [ self.preprocess_word(sentence[i]) if i < len(sentence) else self.stop for i in range(self.sentence_length-1) ] + [ self.stop ]
 
+    # generate another batch of data (loop if needed)
     def next_batch(self):
+        # test if we need to overflow
         if(self.index + self.batch_size >= self.size):
+            # pull the last elements from the current list 
             out1 = self.corpus[self.index:]
-            self.index = self.index + self.batch_size - self.size + 1
-            out2 = self.corpus[:self.index-1]
+
+            # randomize the corpus
+            random.shuffle(corpus)
+
+            # pull the rest of the data from the now-shuffled corpus
+            self.index = self.index + self.batch_size - self.size
+            out2 = self.corpus[:self.index]
+
+            # combine
             out = out1 + out2
+
         else:
             out = self.corpus[self.index:self.index+self.batch_size]
             self.index += self.batch_size
+
+        # enforce that the array contains only ints
         return np.array(out).astype(int)
 
 
+    # given an array of word ints, turn it into a sentence string
     def translate(self, sentence):
         # turn ints to words
         tokens = [ self.words[word] if word > 0 else '' for word in sentence ]
@@ -114,7 +144,7 @@ class Corpus(object):
         sentence = sentence.replace(' \'\'', '"')
         sentence = sentence.replace('`` ', '"')
 
-        # remove whitespace in front of most punctuation (not quotes b/c of ambiguity)
+        # remove whitespace in front of most punctuation
         sentence = sentence.replace(' ,',',').replace(' .','.').replace(' !','!')
         sentence = sentence.replace(' ?','?').replace(' :',':').replace(' \'', '\'')
 

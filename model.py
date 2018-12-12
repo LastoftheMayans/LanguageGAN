@@ -175,8 +175,8 @@ def train():
         # Save at the end of the epoch, too
         saver.save(sess, './cache/gan_saved_model')
 
-        out = sess.run(model.evaluate, feed_dict = {g_input_z: gen_noise()})
-        print('**** EVALUATION: %g ****' % out)
+        # out = sess.run(model.evaluate, feed_dict = {g_input_z: gen_noise()})
+        # print('**** EVALUATION: %g ****' % out)
 
 
 # Test the model by generating some samples from random latent codes
