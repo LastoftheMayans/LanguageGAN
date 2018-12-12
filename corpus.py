@@ -79,8 +79,15 @@ class Corpus(object):
 
         return corpus
 
+    def preprocess_word(self, word):
+        if word[0] == '_':
+            word = word[1:]
+        if word[-1] == '_':
+            word = word[:-1]
+        return word
+
     def clip_sentence(self, sentence):
-        return [ sentence[i] if i < len(sentence) else self.stop for i in range(self.sentence_length-1) ] + [ self.stop ]
+        return [ self.preprocess_word(sentence[i]) if i < len(sentence) else self.stop for i in range(self.sentence_length-1) ] + [ self.stop ]
 
     def next_batch(self):
         if(self.index + self.batch_size >= self.size):

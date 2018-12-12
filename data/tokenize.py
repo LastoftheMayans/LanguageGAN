@@ -33,7 +33,7 @@ def tokenize_file_helper(infile, outfile):
     output = nltk.sent_tokenize(data)
 
     # Tokenize lines
-    output = [ nltk.word_tokenize(sentence) + STOP for sentence in output]
+    output = [ nltk.word_tokenize(sentence) for sentence in output]
 
     # Recombine tokenized output
     output = unicode("\n".join([" ".join(sentence) for sentence in output]))
