@@ -80,6 +80,8 @@ class Corpus(object):
         return corpus
 
     def preprocess_word(self, word):
+        if len(word) < 2:
+            return word
         if word[0] == '_':
             word = word[1:]
         if word[-1] == '_':
