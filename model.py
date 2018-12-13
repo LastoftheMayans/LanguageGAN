@@ -36,6 +36,11 @@ def log(x):
 
 class Model:
 
+    # @params
+    # text_batch    tensor of shape [batch_size, sentence_size] for the real text input
+    # g_input_z     tensor of shape [batch_size, sentence_size, noise_dimension] for the fake text seed
+    # vocab_size    int representing the real size of the corpus vocabulary
+
     def __init__(self, text_batch, g_input_z, vocab_size):
         self.text_batch = text_batch
         self.g_input_z = g_input_z
@@ -50,7 +55,7 @@ class Model:
             self.d_real = self.discriminator(txt)
         with tf.variable_scope("discriminator", reuse=True):
             self.d_fake = self.discriminator(self.g_output)
-        self.d_params = [v for v in tf.trainable_variables() if v.name.startswith("discriminator")]
+        self.d_params = [ v for v in tf.trainable_variables() if v.name.startswith("discriminator") ]
 
         self.output = self.embedding_lookup()
 
@@ -61,22 +66,26 @@ class Model:
         self.evaluate = self.eval_function()
 
     def generator(self):
-        sz = SENTENCE_SIZE * EMBEDDING_SIZE
+        lstmsize = 256
+
         with tf.variable_scope("generator"):
-            g1 = layers.dense(self.g_input_z, sz)
-            g2 = tf.reshape(g1, [-1, SENTENCE_SIZE, EMBEDDING_SIZE])
-            return g2
+            rnn_cell = tf.contrib.rnn.LSTMCell(lstmsize)
+            outputs, state = tf.nn.dynamic_rnn(rnn_cell, self.g_input_z, dtype=tf.float32)
+
+            g1 = layers.dense(outputs, EMBEDDING_SIZE)
+            return g1
 
     def discriminator(self, embedding):
-        hidden_size = 256
+        # embedding is a tensor of shape [batch_size, sentence_size, embedding_size]
+        lstmsize = 256
 
-        d1 = tf.reshape(embedding, [-1, SENTENCE_SIZE * EMBEDDING_SIZE]) 
-        d2 = layers.dense(d1, hidden_size)
-        d3 = layers.batch_normalization(d2)
-        d4 = tf.nn.leaky_relu(d3)
+        rnn_cell = tf.contrib.rnn.LSTMCell(lstmsize)
+        outputs, state = tf.nn.dynamic_rnn(rnn_cell, embedding, dtype=tf.float32)
 
-        d5 = layers.dense(d4, 1, activation=tf.nn.sigmoid)
-        return tf.reshape(d5, [-1])
+        d1 = layers.dense(outputs, 1, activation=tf.nn.sigmoid)
+        d2 = tf.reshape(d1, [-1, SENTENCE_SIZE])
+
+        return d2
 
     # Training loss for Generator
     def g_loss_function(self):
@@ -115,7 +124,7 @@ class Model:
 ## --------------------------------------------------------------------------------------
 
 # Build model
-g_input_z = tf.placeholder(tf.float32, (None, NOISE_DIMENSION))
+g_input_z = tf.placeholder(tf.float32, (None, SENTENCE_SIZE, NOISE_DIMENSION))
 txt_input = tf.placeholder(tf.int32, (None, SENTENCE_SIZE))
 corpus = Corpus(AUTHOR, batch_size=BATCH_SIZE, sentence_length=SENTENCE_SIZE)
 model = Model(txt_input, g_input_z, corpus.vocab_size)
@@ -135,7 +144,7 @@ def load_last_checkpoint():
     saver.restore(sess, tf.train.latest_checkpoint('./'))
 
 def gen_noise():
-    return 2 * np.random.rand(BATCH_SIZE, NOISE_DIMENSION) - 1
+    return 2 * np.random.rand(BATCH_SIZE, SENTENCE_SIZE, NOISE_DIMENSION) - 1
 
 # Train the model
 def train():
@@ -183,11 +192,14 @@ if __name__ == '__main__':
     do_train = int(sys.argv[1]) == 0
     load = int(sys.argv[2]) == 0
 
-    if load or not do_train:
+    if load:
         load_last_checkpoint()
 
     if do_train:
         train()
+    elif load:
+        test()
     else:
+        train()
         test()
 

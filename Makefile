@@ -6,6 +6,9 @@ load:
 	python3 ./model.py 0 0
 
 test:
+	python3 ./model.py 1 1
+
+loadtest:
 	python3 ./model.py 1 0
 
 tokenize:
