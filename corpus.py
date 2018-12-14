@@ -113,7 +113,7 @@ class Corpus(object):
             out1 = self.corpus[self.index:]
 
             # randomize the corpus
-            random.shuffle(corpus)
+            random.shuffle(self.corpus)
 
             # pull the rest of the data from the now-shuffled corpus
             self.index = self.index + self.batch_size - self.size
