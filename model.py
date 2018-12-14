@@ -179,10 +179,10 @@ def train():
                 loss_g, _ = sess.run([model.g_loss, model.g_train], feed_dict=make_gen_dict(mask_size))
 
             # Print losses
-            if i % ITERS_PER_PRINT == 0:
+            if i % ITERS_PER_PRINT == 0 and i != 0:
                 print('Iteration %d: Generator loss = %g | Discriminator loss = %g' % (i, loss_g, loss_d))
             # Save
-            if i % ITERS_PER_SAVE == 0:
+            if i % ITERS_PER_SAVE == 0 and i != 0:
                 saver.save(sess, './cache/gan_saved_model')
 
         # Save at the end of the epoch, too
