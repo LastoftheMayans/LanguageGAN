@@ -53,8 +53,8 @@ class Model:
         
         with tf.variable_scope("discriminator"):
             self.embedding = tf.Variable(tf.truncated_normal((self.vocab_size, EMBEDDING_SIZE), stddev=0.1, dtype=tf.float32))
-            oh = tf.one_hot(self.text_batch, vocab_size)
-            self.d_real = self.discriminator(oh)
+            txt = tf.nn.embedding_lookup(self.embedding, self.text_batch)
+            self.d_real = self.discriminator(txt)
         with tf.variable_scope("discriminator", reuse=True):
             self.d_fake = self.discriminator(self.g_output)
         self.d_params = [ v for v in tf.trainable_variables() if v.name.startswith("discriminator") ]
@@ -74,18 +74,11 @@ class Model:
             rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
             outputs, state = tf.nn.dynamic_rnn(rnn_cell, self.g_input_z, dtype=tf.float32)
 
-            g1 = layers.dense(outputs, self.vocab_size)
-            g2 = tf.nn.l2_normalize(g1, axis=2)
-            return g2
+            g1 = layers.dense(outputs, EMBEDDING_SIZE)
+            return g1
 
-    def discriminator(self, sentence):
-        # sentence is a tensor of shape [batch_size, sentence_size, vocab_size]
-        # for real data, the last dimension is one-hot
-        # for generated data, the last dimension is a probability distribution
-
+    def discriminator(self, embedding):
         # embedding is a tensor of shape [batch_size, sentence_size, embedding_size]
-        embedding = tf.tensordot(sentence, self.embedding, [2, 0])
-
         rnnsize = 256
 
         rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
