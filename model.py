@@ -15,7 +15,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # if load == 0, then the model will not load, else load
 
 BATCH_SIZE = 100
-EPOCHS = 10
+EPOCHS_PER_LENGTH_INCREASE = 1
 NUM_GEN_UPDATES = 2
 
 SENTENCE_SIZE = 12
@@ -25,7 +25,7 @@ EMBEDDING_SIZE = 128
 LEARNING_RATE = 0.001
 BETA1 = 0.5
 
-ITERS_PER_PRINT = 100
+ITERS_PER_PRINT = 50
 ITERS_PER_SAVE = 100
 OUTFILE = "output.txt"
 AUTHOR = "hemingway"
@@ -39,11 +39,13 @@ class Model:
     # @params
     # text_batch    tensor of shape [batch_size, sentence_size] for the real text input
     # g_input_z     tensor of shape [batch_size, sentence_size, noise_dimension] for the fake text seed
+    # sentence_mask tensor of shake [sentence_size] with leading 1s and trailing 0s to mask off later words from earlier epochs
     # vocab_size    int representing the real size of the corpus vocabulary
 
-    def __init__(self, text_batch, g_input_z, vocab_size):
+    def __init__(self, text_batch, g_input_z, sentence_mask, vocab_size):
         self.text_batch = text_batch
         self.g_input_z = g_input_z
+        self.sentence_mask = sentence_mask
         self.vocab_size = vocab_size
 
         self.g_output = self.generator()
@@ -82,10 +84,18 @@ class Model:
         rnn_cell = tf.contrib.rnn.LSTMCell(lstmsize)
         outputs, state = tf.nn.dynamic_rnn(rnn_cell, embedding, dtype=tf.float32)
 
-        d1 = layers.dense(outputs, 1, activation=tf.nn.sigmoid)
+        d1 = layers.dense(outputs, 1)
         d2 = tf.reshape(d1, [-1, SENTENCE_SIZE])
+        d3 = layers.batch_normalization(d2)
+        d4 = tf.nn.leaky_relu(d3)
 
-        return d2
+        # mask off later words
+        d5 = tf.multiply(d4, self.sentence_mask)
+
+        d6 = layers.dense(d5, 1, activation=tf.nn.sigmoid)
+        d7 = tf.reshape(d6, [-1])
+
+        return d7
 
     # Training loss for Generator
     def g_loss_function(self):
@@ -126,8 +136,9 @@ class Model:
 # Build model
 g_input_z = tf.placeholder(tf.float32, (None, SENTENCE_SIZE, NOISE_DIMENSION))
 txt_input = tf.placeholder(tf.int32, (None, SENTENCE_SIZE))
+sentence_mask = tf.placeholder(tf.float32, (SENTENCE_SIZE))
 corpus = Corpus(AUTHOR, batch_size=BATCH_SIZE, sentence_length=SENTENCE_SIZE)
-model = Model(txt_input, g_input_z, corpus.vocab_size)
+model = Model(txt_input, g_input_z, sentence_mask, corpus.vocab_size)
 num_batches = len(corpus) // BATCH_SIZE
 
 # Start session
@@ -146,19 +157,30 @@ def load_last_checkpoint():
 def gen_noise():
     return 2 * np.random.rand(BATCH_SIZE, SENTENCE_SIZE, NOISE_DIMENSION) - 1
 
+def gen_mask(l):
+    mask = [ 1 if i < l else 0 for i in range(SENTENCE_SIZE) ]
+    return np.array(mask)
+
+def make_gen_dict(l):
+    return {g_input_z:gen_noise(), sentence_mask:gen_mask(l)}
+
+def make_dis_dict(l):
+    return {g_input_z:gen_noise(), txt_input: corpus.next_batch(), sentence_mask:gen_mask(l)}
+
 # Train the model
+num_epochs = EPOCHS_PER_LENGTH_INCREASE * SENTENCE_SIZE
 def train():
     # Training loop
-
-    for epoch in range(EPOCHS):
+    for epoch in range(num_epochs):
         print('========================== EPOCH %d  ==========================' % epoch)
 
+        mask_size = (epoch // EPOCHS_PER_LENGTH_INCREASE) + 1
         # Loop over our data until we run out
         for i in range(num_batches):
-            loss_d, _ = sess.run([model.d_loss, model.d_train], feed_dict={g_input_z: gen_noise(), txt_input: corpus.next_batch()})
+            loss_d, _ = sess.run([model.d_loss, model.d_train], feed_dict=make_dis_dict(mask_size))
 
             for j in range(NUM_GEN_UPDATES):
-                loss_g, _ = sess.run([model.g_loss, model.g_train], feed_dict={g_input_z: gen_noise()})
+                loss_g, _ = sess.run([model.g_loss, model.g_train], feed_dict=make_gen_dict(mask_size))
 
             # Print losses
             if i % ITERS_PER_PRINT == 0:
@@ -176,7 +198,7 @@ def train():
 
 # Test the model by generating some samples from random latent codes
 def test():
-    output = sess.run(model.output, feed_dict = {g_input_z: gen_noise()})
+    output = sess.run(model.output, feed_dict=make_gen_dict(SENTENCE_SIZE))
     output = [ corpus.translate(l.tolist()) for l in output ]
 
     with open(OUTFILE, 'w') as f:
