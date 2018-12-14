@@ -1,10 +1,8 @@
 import tensorflow as tf
 layers = tf.layers
 import numpy as np
-from scipy.misc import imsave
 import os, sys
 from corpus import Corpus
-import tensorflow.contrib.gan as gan
 
 # Killing optional CPU driver warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -19,13 +17,13 @@ EPOCHS_PER_LENGTH_INCREASE = 1
 NUM_GEN_UPDATES = 2
 
 SENTENCE_SIZE = 14
-NOISE_DIMENSION = 64
-EMBEDDING_SIZE = 128
+NOISE_DIMENSION = 32
+EMBEDDING_SIZE = 256
 
 LEARNING_RATE = 0.001
 BETA1 = 0.5
 
-ITERS_PER_PRINT = 50
+ITERS_PER_PRINT = 100
 ITERS_PER_SAVE = 100
 OUTFILE = "output.txt"
 AUTHOR = "hemingway"
@@ -68,34 +66,43 @@ class Model:
         self.evaluate = self.eval_function()
 
     def generator(self):
-        rnnsize = 256
+        rnnsize = 1024
+        hidden_size = 256
 
         with tf.variable_scope("generator"):
             rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
             outputs, state = tf.nn.dynamic_rnn(rnn_cell, self.g_input_z, dtype=tf.float32)
 
-            g1 = layers.dense(outputs, EMBEDDING_SIZE)
-            return g1
+            g1 = layers.dense(outputs, hidden_size)
+
+            g2 = layers.batch_normalization(g1)
+            g3 = tf.nn.leaky_relu(g2)
+            g4 = layers.dense(g3, EMBEDDING_SIZE)
+
+            return g5
 
     def discriminator(self, embedding):
         # embedding is a tensor of shape [batch_size, sentence_size, embedding_size]
-        rnnsize = 256
+        rnnsize = 1024
+        hidden_size = 256
 
         rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
         outputs, state = tf.nn.dynamic_rnn(rnn_cell, embedding, dtype=tf.float32)
+        d1 = layers.dense(outputs, hidden_size)
+        
+        d2 = layers.batch_normalization(d1)
+        d3 = tf.nn.leaky_relu(d2)
+        d4 = layers.dense(d3, 1)
 
-        d1 = layers.dense(outputs, 1)
-        d2 = tf.reshape(d1, [-1, SENTENCE_SIZE])
-        d3 = layers.batch_normalization(d2)
-        d4 = tf.nn.leaky_relu(d3)
+        d5 = tf.reshape(d4, [-1, SENTENCE_SIZE])
 
         # mask off later words
-        d5 = tf.multiply(d4, self.sentence_mask)
+        d6 = tf.multiply(d5, self.sentence_mask)
 
-        d6 = layers.dense(d5, 1, activation=tf.nn.sigmoid)
-        d7 = tf.reshape(d6, [-1])
+        d7 = layers.dense(d6, 1, activation=tf.nn.sigmoid)
+        d8 = tf.reshape(d7, [-1])
 
-        return d7
+        return d9
 
     # Training loss for Generator
     def g_loss_function(self):
