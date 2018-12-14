@@ -17,8 +17,8 @@ EPOCHS_PER_LENGTH_INCREASE = 1
 NUM_GEN_UPDATES = 2
 
 SENTENCE_SIZE = 14
-NOISE_DIMENSION = 32
-EMBEDDING_SIZE = 256
+NOISE_DIMENSION = 64
+EMBEDDING_SIZE = 128
 
 LEARNING_RATE = 0.001
 BETA1 = 0.5
@@ -84,25 +84,20 @@ class Model:
     def discriminator(self, embedding):
         # embedding is a tensor of shape [batch_size, sentence_size, embedding_size]
         rnnsize = 1024
-        hidden_size = 256
 
         rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
         outputs, state = tf.nn.dynamic_rnn(rnn_cell, embedding, dtype=tf.float32)
-        d1 = layers.dense(outputs, hidden_size)
-        
-        d2 = layers.batch_normalization(d1)
-        d3 = tf.nn.leaky_relu(d2)
-        d4 = layers.dense(d3, 1)
 
-        d5 = tf.reshape(d4, [-1, SENTENCE_SIZE])
+        d1 = layers.dense(outputs, 1)
+        d2 = tf.reshape(d1, [-1, SENTENCE_SIZE])
 
         # mask off later words
-        d6 = tf.multiply(d5, self.sentence_mask)
+        d3 = tf.multiply(d2, self.sentence_mask)
 
-        d7 = layers.dense(d6, 1, activation=tf.nn.sigmoid)
-        d8 = tf.reshape(d7, [-1])
+        d4 = layers.dense(d3, 1, activation=tf.nn.sigmoid)
+        d5 = tf.reshape(d4, [-1])
 
-        return d8
+        return d5
 
     # Training loss for Generator
     def g_loss_function(self):
