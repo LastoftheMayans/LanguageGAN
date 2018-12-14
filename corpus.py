@@ -104,8 +104,8 @@ class Corpus(object):
 
     # set sentence to fixed length (sentence), and remove any leading or trailing numbers (most likely line numbers)
     def clip_sentence(self, sentence):
-        sentence = (sentence[1:] if sentence[0].strip().isdigit() else sentence) if len(sentence > 0) else []
-        sentence = (sentence[:-1] if sentence[-1].strip().isdigit() else sentence) if len(sentence > 0) else []
+        sentence = (sentence[1:] if sentence[0].strip().isdigit() else sentence) if len(sentence) > 0 else []
+        sentence = (sentence[:-1] if sentence[-1].strip().isdigit() else sentence) if len(sentence) > 0 else []
         sentence = [ self.preprocess_word(sentence[i]) if i < len(sentence) else self.stop for i in range(self.sentence_length-2) ]
         sentence = [self.start] + sentence + [self.stop]
         return sentence
