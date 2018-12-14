@@ -75,7 +75,8 @@ class Model:
             outputs, state = tf.nn.dynamic_rnn(rnn_cell, self.g_input_z, dtype=tf.float32)
 
             g1 = layers.dense(outputs, self.vocab_size)
-            return g1
+            g2 = tf.nn.l2_normalize(g1, axis=2)
+            return g2
 
     def discriminator(self, sentence):
         # sentence is a tensor of shape [batch_size, sentence_size, vocab_size]
