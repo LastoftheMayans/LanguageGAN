@@ -79,7 +79,7 @@ class Model:
             g3 = tf.nn.leaky_relu(g2)
             g4 = layers.dense(g3, EMBEDDING_SIZE)
 
-            return g5
+            return g4
 
     def discriminator(self, embedding):
         # embedding is a tensor of shape [batch_size, sentence_size, embedding_size]
