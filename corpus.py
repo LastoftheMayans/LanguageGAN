@@ -24,9 +24,6 @@ class Corpus(object):
         return self.size
 
     def load_titles(self, book):
-        if len(self.books) > 0:
-            raise AssertionError("Cannot call Corpous.load_titles outside of __init__")
-
         books = []
 
         # validate author
@@ -83,8 +80,8 @@ class Corpus(object):
         # translate each word in the corpus to the corresponding int
         corpus = [ [ self.vocabulary[word] for word in sentence ] for sentence in corpus ]
 
-        # remove all one-word sentence
-        corpus = [ sentence if sentence[1] > 0 for sentence in corpus ]
+        # remove all one-token and two-token sentences
+        corpus = [ sentence for sentence in corpus if sentence[1] > 0 and sentence[2] > 0 ]
 
         # shuffle the sentences together
         random.shuffle(corpus)
@@ -104,8 +101,9 @@ class Corpus(object):
     # set sentence to fixed length (sentence), and remove any leading or trailing numbers (most likely line numbers)
     def clip_sentence(self, sentence):
         sentence = sentence[1:] if sentence[0].strip().isdigit() else sentence
-        sentence = sentence[:-1] if sentence[-1].strip()isdigit() else sentence
+        sentence = sentence[:-1] if sentence[-1].strip().isdigit() else sentence
         sentence = [ self.preprocess_word(sentence[i]) if i < len(sentence) else self.stop for i in range(self.sentence_length-1) ] + [ self.stop ]
+        return sentence
 
     # generate another batch of data (loop if needed)
     def next_batch(self):
@@ -135,7 +133,7 @@ class Corpus(object):
     # given an array of word ints, turn it into a sentence string
     def translate(self, sentence):
         # turn ints to words
-        tokens = [ self.words[word] if word > 0 else '' for word in sentence ]
+        tokens = [ self.words[word] for word in sentence if word > 0]
 
         # combine the list into a single sentence
         sentence = " ".join(tokens)
