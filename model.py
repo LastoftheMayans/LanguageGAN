@@ -18,7 +18,7 @@ BATCH_SIZE = 100
 EPOCHS_PER_LENGTH_INCREASE = 1
 NUM_GEN_UPDATES = 2
 
-SENTENCE_SIZE = 12
+SENTENCE_SIZE = 14
 NOISE_DIMENSION = 64
 EMBEDDING_SIZE = 128
 
@@ -53,8 +53,8 @@ class Model:
         
         with tf.variable_scope("discriminator"):
             self.embedding = tf.Variable(tf.truncated_normal((self.vocab_size, EMBEDDING_SIZE), stddev=0.1, dtype=tf.float32))
-            txt = tf.nn.embedding_lookup(self.embedding, self.text_batch)
-            self.d_real = self.discriminator(txt)
+            oh = tf.one_hot(self.text_batch, vocab_size)
+            self.d_real = self.discriminator(oh)
         with tf.variable_scope("discriminator", reuse=True):
             self.d_fake = self.discriminator(self.g_output)
         self.d_params = [ v for v in tf.trainable_variables() if v.name.startswith("discriminator") ]
@@ -68,20 +68,26 @@ class Model:
         self.evaluate = self.eval_function()
 
     def generator(self):
-        lstmsize = 256
+        rnnsize = 256
 
         with tf.variable_scope("generator"):
-            rnn_cell = tf.contrib.rnn.LSTMCell(lstmsize)
+            rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
             outputs, state = tf.nn.dynamic_rnn(rnn_cell, self.g_input_z, dtype=tf.float32)
 
-            g1 = layers.dense(outputs, EMBEDDING_SIZE)
+            g1 = layers.dense(outputs, self.vocab_size)
             return g1
 
-    def discriminator(self, embedding):
-        # embedding is a tensor of shape [batch_size, sentence_size, embedding_size]
-        lstmsize = 256
+    def discriminator(self, sentence):
+        # sentence is a tensor of shape [batch_size, sentence_size, vocab_size]
+        # for real data, the last dimension is one-hot
+        # for generated data, the last dimension is a probability distribution
 
-        rnn_cell = tf.contrib.rnn.LSTMCell(lstmsize)
+        # embedding is a tensor of shape [batch_size, sentence_size, embedding_size]
+        embedding = tf.tensordot(sentence, self.embedding, [2, 0])
+
+        rnnsize = 256
+
+        rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
         outputs, state = tf.nn.dynamic_rnn(rnn_cell, embedding, dtype=tf.float32)
 
         d1 = layers.dense(outputs, 1)

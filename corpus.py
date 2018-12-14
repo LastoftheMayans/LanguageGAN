@@ -2,10 +2,11 @@ import os, os.path, random
 import numpy as np
 
 class Corpus(object):
-    def __init__(self, author, book=None, batch_size=1, sentence_length=12, stop="*stop*"):
+    def __init__(self, author, book=None, batch_size=1, sentence_length=12, start="*start*", stop="*stop*"):
         self.author = author
         self.batch_size = batch_size
         self.sentence_length = sentence_length
+        self.start = start
         self.stop = stop
 
         self.books = self.load_titles(book)
@@ -69,10 +70,13 @@ class Corpus(object):
             with open(title, 'r') as f:
                 corpus = corpus + [ self.clip_sentence(sentence.lower().split(' ')) for sentence in f.read().split('\n') ]
 
-        # create a list of unique words (such that self.stop is the first element -> 0)
+        # create a list of unique words
         self.words = set([ word for sentence in corpus for word in sentence ])
+        # make sure that the start and stop tokens don't appear in the corpus
+        self.words.remove(self.start)
         self.words.remove(self.stop)
-        self.words = [ self.stop ] + list(self.words)
+        # put start and stop tokens at the beginning
+        self.words = [self.start] + [ self.stop ] + list(self.words)
 
         # map each word to an int
         self.vocabulary = { self.words[index]: index for index in range(len(self.words))}
@@ -81,7 +85,7 @@ class Corpus(object):
         corpus = [ [ self.vocabulary[word] for word in sentence ] for sentence in corpus ]
 
         # remove all one-token and two-token sentences
-        corpus = [ sentence for sentence in corpus if sentence[1] > 0 and sentence[2] > 0 ]
+        corpus = [ sentence for sentence in corpus if sentence[2] > 1 and sentence[3] > 1 ]
 
         # shuffle the sentences together
         random.shuffle(corpus)
@@ -102,7 +106,8 @@ class Corpus(object):
     def clip_sentence(self, sentence):
         sentence = sentence[1:] if sentence[0].strip().isdigit() else sentence
         sentence = sentence[:-1] if sentence[-1].strip().isdigit() else sentence
-        sentence = [ self.preprocess_word(sentence[i]) if i < len(sentence) else self.stop for i in range(self.sentence_length-1) ] + [ self.stop ]
+        sentence = [ self.preprocess_word(sentence[i]) if i < len(sentence) else self.stop for i in range(self.sentence_length-2) ]
+        sentence = [self.start] + sentence + [self.stop]
         return sentence
 
     # generate another batch of data (loop if needed)
@@ -133,7 +138,7 @@ class Corpus(object):
     # given an array of word ints, turn it into a sentence string
     def translate(self, sentence):
         # turn ints to words
-        tokens = [ self.words[word] for word in sentence if word > 0]
+        tokens = [ self.words[word] for word in sentence if word > 1]
 
         # combine the list into a single sentence
         sentence = " ".join(tokens)
