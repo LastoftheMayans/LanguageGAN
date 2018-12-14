@@ -102,7 +102,7 @@ class Model:
         d7 = layers.dense(d6, 1, activation=tf.nn.sigmoid)
         d8 = tf.reshape(d7, [-1])
 
-        return d9
+        return d8
 
     # Training loss for Generator
     def g_loss_function(self):
