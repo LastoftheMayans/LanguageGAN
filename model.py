@@ -16,7 +16,7 @@ BATCH_SIZE = 100
 EPOCHS_PER_LENGTH_INCREASE = 1
 NUM_GEN_UPDATES = 2
 
-SENTENCE_SIZE = 14
+SENTENCE_SIZE = 12
 NOISE_DIMENSION = 64
 EMBEDDING_SIZE = 128
 
@@ -66,24 +66,18 @@ class Model:
         self.evaluate = self.eval_function()
 
     def generator(self):
-        rnnsize = 1024
-        hidden_size = 256
+        rnnsize = 256
 
         with tf.variable_scope("generator"):
             rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
             outputs, state = tf.nn.dynamic_rnn(rnn_cell, self.g_input_z, dtype=tf.float32)
 
-            g1 = layers.dense(outputs, hidden_size)
-
-            g2 = layers.batch_normalization(g1)
-            g3 = tf.nn.leaky_relu(g2)
-            g4 = layers.dense(g3, EMBEDDING_SIZE)
-
-            return g4
+            g1 = layers.dense(outputs, EMBEDDING_SIZE)
+            return g1
 
     def discriminator(self, embedding):
         # embedding is a tensor of shape [batch_size, sentence_size, embedding_size]
-        rnnsize = 1024
+        rnnsize = 256
 
         rnn_cell = tf.contrib.rnn.GRUCell(rnnsize)
         outputs, state = tf.nn.dynamic_rnn(rnn_cell, embedding, dtype=tf.float32)
