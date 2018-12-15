@@ -26,7 +26,7 @@ BETA1 = 0.5
 ITERS_PER_PRINT = 100
 ITERS_PER_SAVE = 100
 OUTFILE = "output.txt"
-AUTHOR = "hemingway"
+AUTHOR = "hamilton"
 
 # Numerically stable logarithm function
 def log(x):
